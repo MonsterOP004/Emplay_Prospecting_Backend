@@ -23,6 +23,15 @@ class twilioInput(BaseModel):
     to: str
     message: str
 
+@app.get("/")
+async def root():
+    return {"message": "Welcome to Prospecting API"}
+
+@app.get("/healthz")
+async def health_check():
+    return {"status": "ok"}
+
+
 @app.post("/competitor_node")
 async def competitor_node(input_data: productInput):
     try:
