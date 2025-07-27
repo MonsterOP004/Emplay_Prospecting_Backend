@@ -31,7 +31,6 @@ async def root():
 async def health_check():
     return {"status": "ok"}
 
-
 @app.post("/competitor_node")
 async def competitor_node(input_data: productInput):
     try:
@@ -43,7 +42,7 @@ async def competitor_node(input_data: productInput):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
     
-@app.get("/twilio_messenger")
+@app.post("/twilio_messenger")
 async def twilio_messenger(input_data: twilioInput):
     try:
         if input_data.type == "whatsapp":
