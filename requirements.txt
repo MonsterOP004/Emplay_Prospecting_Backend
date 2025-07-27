@@ -13,7 +13,6 @@ colorama==0.4.6
 dataclasses-json==0.6.7
 distro==1.9.0
 fastapi==0.116.1
-flask==3.1.1
 frozenlist==1.7.0
 grandalf==0.8
 greenlet==3.2.3
@@ -45,7 +44,6 @@ numpy==2.3.1
 orjson==3.11.0
 ormsgpack==1.10.0
 packaging==25.0
-playwright==1.54.0
 propcache==0.3.2
 pydantic==2.11.7
 pydantic-core==2.33.2
