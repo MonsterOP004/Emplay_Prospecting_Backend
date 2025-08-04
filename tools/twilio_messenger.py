@@ -1,5 +1,3 @@
-# tools/twilio_messenger.py
-
 import os
 from dotenv import load_dotenv
 from twilio.rest import Client
@@ -11,12 +9,21 @@ auth_token = os.getenv("TWILIO_AUTH_TOKEN")
 twilio_number = os.getenv("TWILIO_PHONE_NUMBER")
 client = Client(account_sid, auth_token)
 
+def format_number(number: str, default_country_code="+91") -> str:
+    number = str(number).strip()
+    if not number.startswith("+"):
+        if number.startswith("0"):
+            number = number[1:]
+        number = default_country_code + number
+    return number
+
 def send_sms(body: str, to: str) -> str:
-    
+    to_number = format_number(to)
+
     message = client.messages.create(
         body=body,
         from_=twilio_number,
-        to=to
+        to=to_number
     )
     return message.sid
 

@@ -1,38 +1,77 @@
 from langchain_groq import ChatGroq
 from langchain.prompts import PromptTemplate
 from langchain.chains import LLMChain
-
-from dotenv import load_dotenv  
+from dotenv import load_dotenv
+from tools.tavily_search import search_web
+from tools.summarizer_tool import summarize_long_text
 
 load_dotenv(override=True)
 
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
 
-def run_competitor_analysis(product: str, competitor_data: str) -> str:
+def competitor_analysis_prompt(
+    product: str,
+    description: str,
+    product_analysis: str = "",
+    competitor_research_data: str = ""
+) -> str:
+    # 🔍 Step 1: Use Tavily to find top competitors and their info
+    search_query = f"Top competitors for {product} or similar products/services. Include websites, social media links, and reviews."
+    search_result = search_web(search_query)
+    summarized_search = summarize_long_text(search_result,task="top competitors, their websites, socials, and product review insights") if search_result else "No external data found."
+
+    # 🧠 Step 2: Prepare prompt
     prompt = PromptTemplate.from_template("""
-You are a market research analyst AI. Based on the following research data about competitors for the product "{product}", perform a detailed competitor analysis.
+You are a competitive intelligence analyst.
 
-Competitor Research Data:
-{competitor_data}
+Using the internal and external data below, generate a competitor analysis.
 
-For the top 3 competitors mentioned, analyze and present the following for each:
+Product Information:
+- Product: {product}
+- Description: {description}
 
-1. SWOT Analysis  
-2. Pricing Strategy (Freemium, subscription tiers, per-user, etc.)  
-3. Value Proposition  
-4. Client Types / Ideal Customer Profile (ICP)  
-5. Positioning (How is the product positioned in the market)  
-6. Marketing Strengths, including:  
-   - Social media following  
-   - Famous campaigns  
-   - Collaborations with influencers/celebrities  
-   - User-generated content (UGC) presence  
-   - Product reviews (on G2, Capterra, ProductHunt for B2B; Amazon, Etsy, eBay for B2C)  
+Internal Product Analysis:
+{product_analysis}
 
-Present your output in a clear structured format with each competitor analyzed separately.
+Previous Competitor Research (if any):
+{competitor_research_data}
 
-Respond only based on the provided data. If data is missing or unclear, indicate so transparently.
+External Web Search Summary:
+{competitor_analysis_landscape}
+
+For each competitor (3–5 if possible), give insights in this format:
+
+Competitor <Name>:
+- Website/Socials: <Links if known>
+- SWOT:
+  - Strengths:
+  - Weaknesses:
+  - Opportunities:
+  - Threats:
+- Pricing Strategy: Include pricing tiers, bundles, discount schemes
+- Value Proposition: Brand tagline, value promise, core benefits
+- Target Audience:
+  - Demographics (age, gender, income, etc.):
+  - Geographic (country, region, city type):
+  - Psychographic (emotions, pain points, opinions, values):
+  - Behavioral (usage pattern, buyer journey stage, loyalty):
+- Positioning: Luxury/Mass, Niche/Broad, Aspirational/Functional, Brand Perception
+- Marketing Strengths:
+  - Socials (followers, engagement, UGC, campaigns, influencer tie-ups)
+- Review Strengths: What people say on Amazon, Etsy, Website, G2, etc.
+- Competitive Positioning: How do they compare on pricing, branding, and service
+- Channel Usage: Are they active on Instagram, TikTok, Meta, Website, Storefronts?
+
+Don't use tables. Make the output narrative and easy to scan in bullet format.
 """)
-    
+
     chain = LLMChain(llm=groq_llm, prompt=prompt)
-    return chain.run(product=product, competitor_data=competitor_data)
+
+    # Step 3: Run the chain
+    return chain.run({
+        "product": product,
+        "description": description,
+        "product_analysis": product_analysis,
+        "competitor_research_data": competitor_research_data,
+        "competitor_analysis_landscape": summarized_search
+    })

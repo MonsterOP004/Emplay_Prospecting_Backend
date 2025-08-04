@@ -2,6 +2,9 @@
 
 from langchain_community.tools.tavily_search import TavilySearchResults
 from langchain.agents import tool
+from dotenv import load_dotenv
+
+load_dotenv(override=True)
 
 # Tavily Search Tool instance
 tavily_tool = TavilySearchResults(k=5)
