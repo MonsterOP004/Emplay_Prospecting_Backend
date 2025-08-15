@@ -16,6 +16,9 @@ def call_openai_tool(business_info, perplexity_data):
     website_link = business_info.get("website_link", "Unknown")
     business_goals = business_info.get("business_goals", "Unknown")
     marketing_budget = business_info.get("marketing_budget", "Unknown")
+    target_audience = business_info.get("target_audience", "Unknown")
+    current_marketing_assets = business_info.get("current_marketing_assets", "Unknown")
+    brand_voice = business_info.get("brand_voice", "Unknown")
 
     research_context = json.dumps(perplexity_data, indent=2)
 
@@ -28,10 +31,11 @@ Business Name: {business_name}
 Business Type: {business_type}
 Location: {location}
 Business Goals: {business_goals}
-Available Marketing Assets: {marketing_assets}
 Brand Voice: {brand_voice}
 Website: {website_link}
 Marketing Budget: {marketing_budget}
+Target Audience: {target_audience}
+Current Marketing Assets: {current_marketing_assets}
 
 Perplexity Research Data:
 {research_context}
@@ -153,6 +157,9 @@ def selected_strategy_expansion(business_info, perplexity_data, selection):
     website_link = business_info.get("website_link", "Unknown")
     business_goals = business_info.get("business_goals", "Unknown")
     marketing_budget = business_info.get("marketing_budget", "Unknown")
+    target_audience = business_info.get("target_audience", "Unknown")
+    current_marketing_assets = business_info.get("current_marketing_assets", "Unknown")
+    brand_voice = business_info.get("brand_voice", "Unknown")
 
     research_context = json.dumps(perplexity_data, indent=2)
     user_selected_data = json.dumps(selection.get("selected_strategy_ids", []), indent=2)
@@ -168,10 +175,11 @@ Business Name: {business_name}
 Business Type: {business_type}
 Location: {location}
 Business Goals: {business_goals}
-Available Marketing Assets: {marketing_assets}
 Brand Voice: {brand_voice}
 Website: {website_link}
 Marketing Budget: {marketing_budget}
+Target Audience: {target_audience}
+Current Marketing Assets: {current_marketing_assets}
 
 Perplexity Research Data:
 {research_context}
