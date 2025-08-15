@@ -9,6 +9,7 @@ from db import init_db, insert_plan, update_plan
 from services.perplexity_tool import perplexity_tool_prompt, call_perplexity_tool
 from services.open_ai_tool import call_openai_tool, selected_strategy_expansion
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
 
 
 DB_PATH = "marketing.db"
@@ -29,7 +30,7 @@ async def lifespan(app: FastAPI):
     init_db()
     yield
     print("🔹 Shutting down...")
-    
+
 class BusinessInfo(BaseModel):
     business_name: str
     business_type: str
