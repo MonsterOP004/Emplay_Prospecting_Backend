@@ -8,15 +8,28 @@ import uvicorn
 from db import init_db, insert_plan, update_plan
 from services.perplexity_tool import perplexity_tool_prompt, call_perplexity_tool
 from services.open_ai_tool import call_openai_tool, selected_strategy_expansion
+from fastapi.middleware.cors import CORSMiddleware
+
 
 DB_PATH = "marketing.db"
 
 app = FastAPI(title="Marketing Plan Generator MSME")
 
-@app.on_event("startup")
-def startup_event():
-    init_db()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    print("🔹 Initializing database...")
+    init_db()
+    yield
+    print("🔹 Shutting down...")
+    
 class BusinessInfo(BaseModel):
     business_name: str
     business_type: str
@@ -27,6 +40,14 @@ class BusinessInfo(BaseModel):
     target_audience: str
     current_marketing_assets: str
     brand_voice: str
+
+@app.get("/")
+async def root():
+    return {"message": "Welcome to Marketing API"}
+
+@app.get("/healthz")
+async def health_check():
+    return {"status": "ok"}
 
 @app.post("/user_basic_input")
 def user_basic_input(data: BusinessInfo):
