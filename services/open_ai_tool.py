@@ -19,7 +19,7 @@ def call_openai_tool(business_info, perplexity_data):
 
     research_context = json.dumps(perplexity_data, indent=2)
 
-    system_message = """
+    system_message = f"""
 12-Month Marketing Plan with Execution Pathway (Perplexity-Optimized)
 
 Create a detailed 12-month marketing plan for the following business:
@@ -159,7 +159,7 @@ def selected_strategy_expansion(business_info, perplexity_data, selection):
     month_activity_selections = json.dumps(selection.get("month_activity_selections", []), indent=2)
 
 
-    system_message = """
+    system_message = f"""
 12-Month Marketing Plan with Execution Pathway (Perplexity-Optimized)
 
 Create a detailed 12-month marketing plan for the following business:
