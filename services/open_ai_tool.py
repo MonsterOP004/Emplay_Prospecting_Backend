@@ -108,17 +108,17 @@ Budget must align with Perplexity benchmarks + user input.
 | [KPI] | [Method] |
 
 8. Action Items Dictionary (Clickable Plan)
-Produce a JSON-like object containing all tactical actions from Core Strategies + Month-wise Planner:
+Produce a JSON-like object containing all tactical actions from Core Strategies + Month-wise Planner for example:
 
-{
+{{
     "plan_id": "unique_id",
-    "preferences": {
+    "preferences": {{
         "budget_range": "£X–£Y",
         "primary_objectives": ["Objective 1", "Objective 2"],
         "brand_voice": "{brand_voice}"
-    },
+    }},
     "action_items": [
-        {
+        {{
             "month": 1,
             "channel": "Instagram",
             "campaign": "New Arrival Launch",
@@ -129,9 +129,9 @@ Produce a JSON-like object containing all tactical actions from Core Strategies 
             ],
             "estimated_cost": "£XXX",
             "expected_impact": "Awareness +15%"
-        }
+        }}
     ]
-}
+}}
 
 Post-Selection Execution Expansion Prompt
 Input:
@@ -264,6 +264,8 @@ For each selected strategy:
     • Campaign Blueprint: Campaign name, goal, audience targeting, messaging pillars, formats, cadence, seasonality hooks, KPIs, and budget allocation.
     • Content & Copy Starters: Subject lines, captions, CTAs, outlines.
     • Action Items Dictionary: JSON schema with atomic tasks, assets needed, owner role, due dates, estimated cost, and expected impact.
+
+direct give the output in json format and do not add any extra opening and closing text in the output.
 """
 
 

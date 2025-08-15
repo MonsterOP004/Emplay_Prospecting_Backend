@@ -1,7 +1,7 @@
 import requests
 import json
 
-BASE_URL = "https://emplay-prospecting-backend.onrender.com"
+BASE_URL = "http://localhost:6969"
 
 # Step 1: Send basic business info
 business_info = {
