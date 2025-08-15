@@ -4,37 +4,37 @@ from datetime import datetime
 from dateutil import parser
 import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
-from io import BytesIO, StringIO
+from io import StringIO
 import csv
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from tools.csv_reader import load_audience
-from tools.twilio_messenger import send_sms
-
+from tools.twilio_messenger import send_whatsapp  
 # Initialize scheduler once for the whole app
 IST = pytz.timezone("Asia/Kolkata")
 scheduler = BackgroundScheduler(timezone=IST)
 scheduler.start()
 
 
-def send_bulk_sms(message_text, sender_number, audience_data):
+def send_bulk_whatsapp(message_text, sender_number, audience_data):
     """
-    :param message_text: The SMS message content
-    :param sender_number: Twilio sender number
+    Send WhatsApp messages to a list of recipients.
+    :param message_text: The message content
+    :param sender_number: Twilio WhatsApp sender number (e.g. whatsapp:+14155238886)
     :param audience_data: List[dict] with 'name' and 'phone' keys
     """
-    print(f"\n📨 Sending SMS from {sender_number}:\n{message_text}\n")
+    print(f"\n📨 Sending WhatsApp from {sender_number}:\n{message_text}\n")
 
     for entry in audience_data:
         name = entry.get("name", "")
         phone = entry.get("phone", "")
         try:
-            sid = send_sms(message_text, phone, from_number=sender_number)
+            sid = send_whatsapp(message_text, phone, from_number=sender_number)
             print(f"✅ Sent to {name} ({phone}) | SID: {sid}")
         except Exception as e:
             print(f"❌ Failed to send to {name} ({phone}): {e}")
 
-    print("\n✅ All SMS messages sent.")
+    print("\n✅ All WhatsApp messages sent.")
 
 
 def parse_csv_content(csv_bytes):
@@ -57,8 +57,9 @@ def parse_csv_content(csv_bytes):
 
 def main(message_text, sender_number, csv_bytes, sending_period="instant", scheduled_time=None):
     """
-    :param message_text: The SMS message
-    :param sender_number: Twilio sender number
+    WhatsApp bulk messaging pipeline.
+    :param message_text: The WhatsApp message
+    :param sender_number: Twilio WhatsApp sender number (e.g. whatsapp:+14155238886)
     :param csv_bytes: Raw CSV file content in bytes
     :param sending_period: 'instant' or 'scheduled'
     :param scheduled_time: datetime object or ISO datetime string (if scheduled)
@@ -69,7 +70,7 @@ def main(message_text, sender_number, csv_bytes, sending_period="instant", sched
         raise ValueError(str(e))
 
     if sending_period.lower() == "instant":
-        send_bulk_sms(message_text, sender_number, audience_data)
+        send_bulk_whatsapp(message_text, sender_number, audience_data)
         return {"status": "sent", "scheduled": False}
 
     elif sending_period.lower() == "scheduled":
@@ -79,7 +80,7 @@ def main(message_text, sender_number, csv_bytes, sending_period="instant", sched
         # If it's a string, parse it into a datetime
         if isinstance(scheduled_time, str):
             try:
-                scheduled_time = parser.isoparse(scheduled_time)  # Handles ISO 8601 like "2025-08-10T14:30:00+05:30"
+                scheduled_time = parser.isoparse(scheduled_time)
             except Exception:
                 raise ValueError("Invalid datetime format. Must be ISO 8601 format.")
 
@@ -93,13 +94,13 @@ def main(message_text, sender_number, csv_bytes, sending_period="instant", sched
             raise ValueError("Scheduled time must be in the future")
 
         scheduler.add_job(
-            send_bulk_sms,
+            send_bulk_whatsapp,
             'date',
             run_date=scheduled_time,
             args=[message_text, sender_number, audience_data]
         )
 
-        print(f"⏳ SMS job scheduled for {scheduled_time.strftime('%Y-%m-%d %I:%M %p IST')}")
+        print(f"⏳ WhatsApp job scheduled for {scheduled_time.strftime('%Y-%m-%d %I:%M %p IST')}")
         return {"status": "scheduled", "run_time": scheduled_time.isoformat()}
 
     else:

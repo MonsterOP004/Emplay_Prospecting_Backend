@@ -9,31 +9,29 @@ load_dotenv(override=True)
 
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
 
-def competitor_research_prompt(product: str, description: str, pricing: str, sales_model: str, product_analysis: str) -> str:
+def competitor_research_prompt(
+    user_structured_input: str,
+    previous_agent_output: str | None = None,
+) -> str:
     print("\n🌐 Searching for real-time business and market context using Tavily...\n")
 
-    # Combine all available context to get better results from search
-    search_query = f"""
-Identify the business category, target geography, relevant keywords, and known competitors for the product: "{product}".
-Description: {description}
-Sales Model: {sales_model}
-Pricing: {pricing}
-Additional analysis: {product_analysis}
-"""
-    raw_web_data = search_web(search_query)
-    summarized_context = summarize_long_text(raw_web_data,task="competitive landscape and business insights relevant to this product")
+    product_category = user_structured_input.get("product_category")
+    keywords = user_structured_input.get("keywords")
+    target_geography = user_structured_input.get("target_geography")
+
+    search_query = f"Top competitors for {product_category} or similar products/services in {target_geography}. Include websites, social media links, and reviews."
+    search_result = search_web(search_query)
+
+    summarized_context = summarize_long_text(search_result)
 
     prompt = PromptTemplate.from_template("""
 Use the following context gathered from real-time search and product metadata to perform detailed competitor research:
 
-Product: {product}
-Description: {description}
-Pricing: {pricing}
-Sales Model: {sales_model}
-Product Analysis: {product_analysis}
-
-Search-Derived Context:
 {competitor_research_landscape}
+
+product_category: {product_category}
+keywords: {keywords}
+target_geography: {target_geography}
 
 Conduct a detailed competitor research for businesses in the identified category and geography, with extracted keywords.
 
@@ -55,11 +53,9 @@ Avoid using a table.
 
     chain = LLMChain(llm=groq_llm, prompt=prompt)
     output = chain.run({
-        "product": product,
-        "description": description,
-        "pricing": pricing,
-        "sales_model": sales_model,
-        "product_analysis": product_analysis,
+        "product_category": product_category,
+        "keywords": keywords,
+        "target_geography": target_geography,
         "competitor_research_landscape": summarized_context,
     })
 

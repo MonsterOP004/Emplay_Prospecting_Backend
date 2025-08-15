@@ -5,22 +5,21 @@ from dotenv import load_dotenv
 from tools.tavily_search import search_web
 load_dotenv(override=True)
 from tools.summarizer_tool import summarize_long_text
-groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
+groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")\
+
+import json
 
 def product_analysis_prompt(
-    product : str,
-    description : str,
-    pricing : str,
-    sales_model : str,
-    product_research : str
+    user_structured_input : str,
+    previous_agent_output : str | None = None
 ) -> str:
 
-    # Tavily searches
-    features_info = search_web(f"Key features of {product} with description {description} and {pricing} and {sales_model}")
-    reviews_info = search_web(f"Customer reviews of {product} with description {description} and {pricing} and {sales_model}")
-    use_case_info = search_web(f"Use cases of {product} with description {description} and {pricing} and {sales_model}")
+    data = json.loads(user_structured_input)
 
-    summarized_features = summarize_long_text(features_info, "features")
+    features = data.get("product_features")
+    reviews_info = search_web(f"Customer reviews of {product} with description {description} and {pricing}")
+    use_case_info = search_web(f"Use cases of {product} with description {description} and {pricing}")
+
     summarized_reviews = summarize_long_text(reviews_info, "customer review themes")
     summarized_use_cases = summarize_long_text(use_case_info, "use cases")
 
@@ -35,10 +34,7 @@ Use this data to generate product's analysis.
 
 **Product Metadata**
 - Product Name: {product}
-- Description: {description}
-- Pricing: {pricing}
-- Sales Model: {sales_model}
-- Internal Research (if any): {product_research}
+- Internal Research (if any): {previous_agent_output}
 
 **Web Research via Tavily**
 - Features Info: {summarized_features}
@@ -62,10 +58,7 @@ Keep your tone analytical and objective. Do not make up features if missing.And 
     chain = LLMChain(llm=groq_llm, prompt=prompt)
     return chain.run({
         "product": product,
-        "description": description,
-        "pricing": pricing,
-        "sales_model": sales_model,
-        "product_research": product_research,
+        "previous_agent_input": previous_agent_output,
         "summarized_features": summarized_features,
         "summarized_reviews": summarized_reviews,
         "summarized_use_cases": summarized_use_cases

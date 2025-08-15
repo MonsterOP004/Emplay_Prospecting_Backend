@@ -10,13 +10,15 @@ load_dotenv(override=True)
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
 
 def competitor_analysis_prompt(
-    product: str,
-    description: str,
-    product_analysis: str = "",
-    competitor_research_data: str = ""
+  user_structured_input: str,
+  previous_agent_output: str | None = None
 ) -> str:
-    # 🔍 Step 1: Use Tavily to find top competitors and their info
-    search_query = f"Top competitors for {product} or similar products/services. Include websites, social media links, and reviews."
+
+    competitor_websites = user_structured_input.get("competitor_websites")
+    review_sites = user_structured_input.get("review_sites")
+    social_links = user_structured_input.get("social_links")
+    
+    search_query = f"competitor analysis for {competitor_websites} {review_sites} {social_links}"
     search_result = search_web(search_query)
     summarized_search = summarize_long_text(search_result,task="top competitors, their websites, socials, and product review insights") if search_result else "No external data found."
 
@@ -26,15 +28,10 @@ You are a competitive intelligence analyst.
 
 Using the internal and external data below, generate a competitor analysis.
 
-Product Information:
-- Product: {product}
-- Description: {description}
-
-Internal Product Analysis:
-{product_analysis}
-
-Previous Competitor Research (if any):
-{competitor_research_data}
+Internal Data:
+- Competitor Websites: {competitor_websites}
+- Review Sites: {review_sites}
+- Social Links: {social_links}
 
 External Web Search Summary:
 {competitor_analysis_landscape}
@@ -42,7 +39,6 @@ External Web Search Summary:
 For each competitor (3–5 if possible), give insights in this format:
 
 Competitor <Name>:
-- Website/Socials: <Links if known>
 - SWOT:
   - Strengths:
   - Weaknesses:
@@ -69,9 +65,8 @@ Don't use tables. Make the output narrative and easy to scan in bullet format.
 
     # Step 3: Run the chain
     return chain.run({
-        "product": product,
-        "description": description,
-        "product_analysis": product_analysis,
-        "competitor_research_data": competitor_research_data,
-        "competitor_analysis_landscape": summarized_search
+      "competitor_websites": competitor_websites,
+      "review_sites": review_sites,
+      "social_links": social_links,
+      "competitor_analysis_landscape": summarized_search
     })

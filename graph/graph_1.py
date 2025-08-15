@@ -1,187 +1,72 @@
+# graph.py
 from langgraph.graph import StateGraph, END
-from langchain_core.runnables import RunnableLambda
 from typing import TypedDict
-
+from langchain_core.runnables import Runnable
 import sys
 import os
+
+# Ensure parent dir is in path for imports
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agents.product_analysis_agent import product_analysis_prompt
+# Import your agent prompt functions
 from agents.product_research_agent import product_research_prompt
+from agents.product_analysis_agent import product_analysis_prompt
 from agents.competitor_research_agent import competitor_research_prompt
 from agents.competitor_analysis_agent import competitor_analysis_prompt
-from agents.customer_analysis_agent import customer_analysis_prompt
 from agents.customer_research_agent import customer_research_prompt
+from agents.customer_analysis_agent import customer_analysis_prompt
 from agents.customer_strategy_agent import customer_strategy_prompt
-from agents.gtm_analysis_agent import gtm_analysis_prompt
 from agents.gtm_research_agent import gtm_research_prompt
+from agents.gtm_analysis_agent import gtm_analysis_prompt
+from agents.marketing_campaign_agent import marketing_campaign_prompt
 
+# Import user input analyzer
+from tools.llm_user_info_extractor import user_input_analyser
 
-class GraphState(TypedDict):
-    product: str
-    description: str
-    pricing: str
-    sales_model: str
-    product_research: str
-    product_analysis: str
-    competitor_research_data: str
-    competitor_analysis: str
-    customer_research: str
-    customer_analysis: str
-    customer_strategy: str
-    gtm_research: str
-    gtm_analysis: str
+# Define playbook order
+PLAYBOOK = [
+    "Product Research",
+    "Product Analysis",
+    "Competitor Research",
+    "Competitor Analysis",
+    "Customer Research",
+    "Customer Analysis",
+    "Customer Strategy",
+    "GTM Research",
+    "GTM Analysis",
+    "Marketing Campaign"
+]
 
+# Store pipeline state (could be replaced with Redis/DB for persistence)
+pipeline_state = {
+    "previous_agent_output": None
+}
 
-# ----------------- Nodes -----------------
+# Map agent names to their functions
+AGENT_FUNCTIONS = {
+    "Product Research": product_research_prompt,
+    "Product Analysis": product_analysis_prompt,
+    "Competitor Research": competitor_research_prompt,
+    "Competitor Analysis": competitor_analysis_prompt,
+    "Customer Research": customer_research_prompt,
+    "Customer Analysis": customer_analysis_prompt,
+    "Customer Strategy": customer_strategy_prompt,
+    "GTM Research": gtm_research_prompt,
+    "GTM Analysis": gtm_analysis_prompt,
+    "Marketing Campaign": marketing_campaign_prompt
+}
 
-def product_research_node(state: GraphState) -> dict:
-    product_research_results = product_research_prompt(
-        product=state["product"],
-        description=state.get("description", ""),
-        pricing=state.get("pricing", ""),
-        sales_model=state.get("sales_model", "")
-    )
-    return {"product_research": product_research_results}
+def run_single_agent(user_input: str, agent_name: str) -> str:
 
-def product_analysis_node(state: GraphState) -> dict:
-    refined = product_analysis_prompt(
-        product=state["product"],
-        description=state.get("description", ""),
-        pricing=state.get("pricing", ""),
-        sales_model=state.get("sales_model", ""),
-        product_research=state.get("product_research", "")
-    )
-    return {"product_analysis": refined}
+    if agent_name not in PLAYBOOK:
+        raise ValueError(f"Invalid agent name '{agent_name}'.")
 
-def competitor_research_node(state: GraphState) -> dict:
-    data = competitor_research_prompt(
-        product=state["product"],
-        description=state.get("description", ""),
-        pricing=state.get("pricing", ""),
-        sales_model=state.get("sales_model", ""),
-        product_analysis = state["product_analysis"])
-    return {"competitor_research_data": data}
+    agent_func = AGENT_FUNCTIONS[agent_name]
 
-def competitor_analysis_node(state: GraphState) -> dict:
-    result = competitor_analysis_prompt(
-        product=state["product"],
-        description=state.get("description", ""),
-        product_analysis=state["product_analysis"],
-        competitor_research_data=state["competitor_research_data"]
-    )
-    return {"competitor_analysis": result}
+    user_structured_input = user_input_analyser(user_input, agent_name.lower().replace(" ", "_"))
 
-def customer_research_node(state: GraphState) -> dict:
-    result = customer_research_prompt(
-        product=state["product"],
-        description=state.get("description", ""),
-        pricing=state.get("pricing", ""),
-        sales_model=state.get("sales_model", ""),
-        product_analysis=state["product_analysis"],
-        competitor_analysis=state["competitor_analysis"])
-    return {"customer_research": result}
+    output = agent_func(user_structured_input, pipeline_state["previous_agent_output"])
 
-def customer_analysis_node(state: GraphState) -> dict:
-    result = customer_analysis_prompt(
-        product=state["product"],
-        description=state.get("description", ""),
-        sales_model=state.get("sales_model", ""),
-        product_analysis=state["product_analysis"],
-        competitor_analysis=state["competitor_analysis"],
-        customer_research=state["customer_research"]
-    )
-    return {"customer_analysis": result}
+    pipeline_state["previous_agent_output"] = output
 
-def customer_strategy_node(state: GraphState) -> dict:
-    result = customer_strategy_prompt(
-        product=state["product"],
-        description=state.get("description", ""),
-        sales_model=state.get("sales_model", ""),
-        product_analysis=state["product_analysis"],
-        competitor_analysis=state["competitor_analysis"],
-        customer_research=state["customer_research"],
-        customer_analysis=state["customer_analysis"]
-    )
-    return {"customer_strategy": result}
-
-def gtm_research_node(state: GraphState) -> dict:
-    result = gtm_research_prompt(
-        industry_data=state["product_analysis"],
-        competitor_research_data=state["competitor_research_data"]
-    )
-    return {"gtm_research": result}
-
-def gtm_analysis_node(state: GraphState) -> dict:
-    result = gtm_analysis_prompt(
-        brand_presence="Based on customer strategy: " + state["customer_strategy"],
-        icp_jtbd=state["customer_analysis"],
-        content_insights=state["gtm_research"]
-    )
-    return {"gtm_analysis": result}
-
-
-# ----------------- Graph Definition -----------------
-
-graph = StateGraph(GraphState)
-
-graph.add_node("product_research", RunnableLambda(product_research_node))
-graph.add_node("product_analysis", RunnableLambda(product_analysis_node))
-graph.add_node("competitor_research", RunnableLambda(competitor_research_node))
-graph.add_node("competitor_analysis", RunnableLambda(competitor_analysis_node))
-graph.add_node("customer_research", RunnableLambda(customer_research_node))
-graph.add_node("customer_analysis", RunnableLambda(customer_analysis_node))
-graph.add_node("customer_strategy", RunnableLambda(customer_strategy_node))
-graph.add_node("gtm_research", RunnableLambda(gtm_research_node))
-graph.add_node("gtm_analysis", RunnableLambda(gtm_analysis_node))
-
-# Entry and transitions
-graph.set_entry_point("product_research")
-graph.add_edge("product_research", "product_analysis")
-graph.add_edge("product_analysis", "competitor_research")
-graph.add_edge("competitor_research", "competitor_analysis")
-graph.add_edge("competitor_analysis", "customer_research")
-graph.add_edge("customer_research", "customer_analysis")
-graph.add_edge("customer_analysis", "customer_strategy")
-graph.add_edge("customer_strategy", END)
-# graph.add_edge("customer_strategy", "gtm_research")
-# graph.add_edge("gtm_research", "gtm_analysis")
-# graph.add_edge("gtm_analysis", END)
-
-# Compile the graph
-app = graph.compile()
-
-# Optional: visualize the graph
-print(app.get_graph().draw_mermaid())
-app.get_graph().print_ascii()
-
-
-def prospect_graph(product_input: str, desc="", pricing="", sales="") -> dict:
-    return app.invoke({
-        "product": product_input,
-        "description": desc,
-        "pricing": pricing,
-        "sales_model": sales
-    })
-
-
-# if __name__ == "__main__":
-
-#     product_input = input("Briefly describe your product or service name: ")
-#     description = input("Short description or website/brochure URL: ")
-#     pricing = input("Pricing details (optional): ")
-#     sales_model = input("Sales model (online, subscription, etc.): ")
-
-#     final_output = prospect_graph(product_input, description, pricing, sales_model)
-
-#     print("\n--- Refined Product Description ---\n")
-#     print(final_output["product_analysis"])
-
-#     print("\n--- Competitor Analysis ---\n")
-#     print(final_output["competitor_analysis"])
-
-#     print("\n--- Customer Strategy ---\n")
-#     print(final_output["customer_strategy"])
-
-#     print("\n--- GTM Channel Strategy ---\n")
-#     print(final_output["gtm_analysis"])
+    return output

@@ -1,0 +1,169 @@
+# server.py
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Dict
+import json
+import sqlite3
+import uvicorn
+from db import init_db, insert_plan, update_plan
+from services.perplexity_tool import perplexity_tool_prompt, call_perplexity_tool
+from services.open_ai_tool import call_openai_tool, selected_strategy_expansion
+
+DB_PATH = "marketing.db"
+
+app = FastAPI(title="Marketing Plan Generator MSME")
+
+@app.on_event("startup")
+def startup_event():
+    init_db()
+
+class BusinessInfo(BaseModel):
+    business_name: str
+    business_type: str
+    location: str
+    website_link: str
+    business_goals: str
+    marketing_budget: float
+    target_audience: str
+    current_marketing_assets: str
+    brand_voice: str
+
+@app.post("/user_basic_input")
+def user_basic_input(data: BusinessInfo):
+    plan_id = insert_plan(json.dumps(data.model_dump()))
+    return {"plan_id": plan_id, "message": "Business info stored"}
+
+@app.post("/call_perplexity/{plan_id}")
+def call_perplexity(plan_id: int, data: BusinessInfo):
+    try:
+        prompt = perplexity_tool_prompt(data.website_link)
+        output = call_perplexity_tool(prompt)
+        update_plan(plan_id, perplexity_data=json.dumps(output))
+        return {"plan_id": plan_id, "perplexity_data": output, "message": "Perplexity output stored"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/get_missing_info/{plan_id}")
+def get_missing_info(plan_id: int, user_filled_data: Dict):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT perplexity_data FROM plans WHERE id = ?", (plan_id,))
+    row = cur.fetchone()
+    conn.close()
+
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="Perplexity data not found")
+
+    # ---- Helper: Decode nested JSON strings into Python objects ----
+    def decode_nested_json(obj):
+        """
+        Recursively parse any string that is itself JSON into a Python dict/list.
+        """
+        if isinstance(obj, str):
+            try:
+                parsed = json.loads(obj)
+                return decode_nested_json(parsed)
+            except (ValueError, TypeError):
+                return obj
+        elif isinstance(obj, dict):
+            return {k: decode_nested_json(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [decode_nested_json(i) for i in obj]
+        return obj
+
+    # ---- Helper: Merge dictionaries safely ----
+    def merge_dicts(original, updates):
+        """
+        Recursively merge two dicts without assuming `.get()` works on strings.
+        """
+        if not isinstance(original, dict) or not isinstance(updates, dict):
+            return updates  # if either is not a dict, replace entirely
+
+        for k, v in updates.items():
+            if k in original and isinstance(original[k], dict) and isinstance(v, dict):
+                original[k] = merge_dicts(original[k], v)
+            else:
+                original[k] = v
+        return original
+
+    # Decode stored Perplexity data (in case it has JSON strings inside)
+    stored_data = decode_nested_json(json.loads(row[0]))
+
+    # Merge user-filled missing data into decoded Perplexity data
+    updated_data = merge_dicts(stored_data, user_filled_data)
+
+    # Save updated data back to DB
+    update_plan(plan_id, perplexity_data=json.dumps(updated_data))
+
+    return {
+        "plan_id": plan_id,
+        "updated_perplexity_data": updated_data,
+        "message": "Perplexity data updated with missing info"
+    }
+
+
+
+@app.post("/generate_marketing_plan/{plan_id}")
+def generate_marketing_plan(plan_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT business_info, perplexity_data FROM plans WHERE id = ?", (plan_id,))
+    row = cur.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(status_code=404, detail="Plan not found")
+
+    business_info_str, perplexity_data_str = row
+    if not business_info_str or not perplexity_data_str:
+        raise HTTPException(status_code=400, detail="Business info or Perplexity data missing")
+
+    try:
+        form_data = json.loads(business_info_str)
+        perplexity_data = json.loads(perplexity_data_str)
+    except json.JSONDecodeError:
+        raise HTTPException(status_code=500, detail="Invalid JSON stored in DB")
+
+    marketing_plan = call_openai_tool(form_data, perplexity_data)
+    update_plan(plan_id, marketing_plan=marketing_plan)
+
+    return {"plan_id": plan_id, "marketing_plan": marketing_plan, "message": "Marketing plan generated and stored"}
+
+@app.post("/get_selected_strategy/{plan_id}")
+def select_strategies(plan_id: int, selection: dict):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    selection_data = {
+        "selected_strategy_ids": selection.get("selected_strategy_ids", []),
+        "month_activity_selections": selection.get("month_activity_selections", {})
+    }
+    cur.execute(
+        "UPDATE plans SET strategy_selection = ? WHERE id = ?",
+        (json.dumps(selection_data), plan_id)
+    )
+    conn.commit()
+    conn.close()
+    return {"plan_id": plan_id, "message": "Strategy selection stored"}
+
+@app.post("/generate_final_plan/{plan_id}")
+def generate_final_plan(plan_id: int):
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+    cur.execute("SELECT strategy_selection, business_info, perplexity_data FROM plans WHERE id = ?", (plan_id,))
+    row = cur.fetchone()
+    conn.close()
+
+    if not row or not row[0]:
+        raise HTTPException(status_code=404, detail="Strategy selection not found")
+
+    selection_str, business_info_str, perplexity_data_str = row
+    selection = json.loads(selection_str)
+    business_info = json.loads(business_info_str)
+    perplexity_data = json.loads(perplexity_data_str)
+
+    final_plan = selected_strategy_expansion(business_info, perplexity_data, selection)
+    update_plan(plan_id, final_plan=final_plan)
+    return {"plan_id": plan_id, "final_plan": final_plan, "message": "Final plan generated"}
+
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=6969)

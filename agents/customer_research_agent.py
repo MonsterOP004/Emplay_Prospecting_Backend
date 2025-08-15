@@ -10,37 +10,28 @@ load_dotenv(override=True)
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
 
 def customer_research_prompt(
-    product: str,
-    description: str,
-    pricing: str,
-    sales_model: str,
-    product_analysis: str,
-    competitor_analysis: str
+    user_structured_input : str,
+    previous_agent_output : str | None = None
 ) -> str:
-    # 🔍 Step 1: Use Tavily Search
-    search_query = f"""
-    What is the business category, location, customer type, and key services offered for a business like: 
-    Product: {product}, Description: {description}
-    """
-    search_result = search_web(search_query)
-    summarized_search = summarize_long_text(search_result, task="business category, location, customer type, and services") if search_result else "No external data found."
 
-    # 📋 Step 2: Prompt Template
+    business_category = user_structured_input.get("business_category", "")
+    geography = user_structured_input.get("geography", "")
+    customer_trends = user_structured_input.get("customer_trends", "")
+    behavioral_data = user_structured_input.get("behavioral_data", "")
+
     prompt = PromptTemplate.from_template("""
 You are an expert in market segmentation and customer profiling.
 
 Based on the internal and external information below, define the Ideal Customer Profile (ICP) for a small business.
 
 Internal Business Details:
-- Product: {product}
-- Description: {description}
-- Pricing: {pricing}
-- Sales Model: {sales_model}
-- Product Analysis: {product_analysis}
-- Competitor Analysis: {competitor_analysis}
+-Business Category: {business_category}
+-Geography: {geography}
+-Customer Trends: {customer_trends}
+-Behavioral Data: {behavioral_data}
 
-External Web Search Summary:
-{customer_research_landscape}
+External Data:
+{previous_agent_output}
 
 Your task:
 1. Identify the type of business (e.g., bakery, boutique, spa, gym, florist, local service provider).
@@ -58,11 +49,8 @@ Write in clear, bullet-style or brief narrative format. Avoid using tables.
 
     chain = LLMChain(llm=groq_llm, prompt=prompt)
     return chain.run({
-        "product": product,
-        "description": description,
-        "pricing": pricing,
-        "sales_model": sales_model,
-        "product_analysis": product_analysis,
-        "competitor_analysis": competitor_analysis,
-        "customer_research_landscape": summarized_search
+        "business_category": business_category,
+        "geography": geography,
+        "customer_trends": customer_trends,
+        "behavioral_data": behavioral_data,
     })

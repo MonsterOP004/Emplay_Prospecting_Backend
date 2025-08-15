@@ -1,13 +1,41 @@
 {
-    "Bluetooth Speaker": "Hey {name}, ready to amp up your {interest} sessions? Get our portable Bluetooth speaker with booming sound! Shop now: www.boat.com",
-  
-    "Smart Speaker": "Hi {name}, bring smart living to your {interest} space with our voice-controlled smart speaker. Order today: www.boat.com",
-  
-    "Waterproof Speaker": "Hello {name}, music meets adventure! Our waterproof speaker is perfect for {interest} lovers like you. Grab yours: www.boat.com",
-  
-    "Bass-Heavy Speaker": "Hey {name}, if you love {interest} with deep bass, you'll love our new BassMax speakers. Check it out: www.boat.com",
-  
-    "Party Speaker": "Yo {name}, planning a {interest}? Don’t miss out on our LED-lit party speaker – loud, fun, and affordable! Buy now: www.boat.com"
-  
+    "templates": [
+      {
+        "type": "Product Launch / New Arrival",
+        "sms": "Just in: Our latest [Product Name] is now available. Limited stock. Shop now → [short.link]"
+      },
+      {
+        "type": "Discount / Limited-Time Offer",
+        "sms": "48hr ONLY: Get 20% off sitewide with code SAVE20. Ends soon → [short.link]"
+      },
+      {
+        "type": "Event / Launch Invitation",
+        "sms": "You’re invited to our store launch on [Date]! Exclusive offers, giveaways & more. RSVP → [short.link]"
+      },
+      {
+        "type": "Customer Winback",
+        "sms": "It’s been a while! Here's 15% off to welcome you back. Use code: MISSEDYOU → [short.link]"
+      },
+      {
+        "type": "Appointment Reminder",
+        "sms": "Hello [Name], just a reminder: your appointment is tomorrow at 4PM. Need to reschedule? Call (Number)"
+      },
+      {
+        "type": "Loyalty Reward",
+        "sms": "You’ve earned £10 in loyalty credit! Use it on your next purchase. Claim now → [short.link]"
+      },
+      {
+        "type": "Seasonal Sale (UK calendar)",
+        "sms": "Our Bank Holiday Sale is LIVE! Up to 30% off. Ends Monday midnight → [short.link]"
+      },
+      {
+        "type": "Abandoned Cart Reminder",
+        "sms": "Don’t miss out — your basket’s still waiting. Checkout now before it sells out → [short.link]"
+      },
+      {
+        "type": "Subscription Renewal",
+        "sms": "Your subscription ends on [Date]. Renew today & get a bonus gift → [short.link]"
+      }
+    ]
 }
   

@@ -7,14 +7,27 @@ load_dotenv(override=True)
 
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
 
-def gtm_research_prompt(industry: str, current_channels: str, competitor_tactics: str) -> str:
+def gtm_research_prompt(
+    user_structured_input : str,
+    previous_agent_output : str | None = None
+) -> str:
+
+    industry_type = user_structured_input.get("industry_type")
+    benchmarks = user_structured_input.get("benchmarks")
+    top_channels = user_structured_input.get("top_channels")
+    content_types = user_structured_input.get("content_types")
+
     prompt = PromptTemplate.from_template("""
 You are a Go-To-Market (GTM) strategy expert. Based on the information below, identify effective marketing channel strategies for small and medium businesses (SMBs) in this domain.
 
 Inputs:
-- Business Industry: {industry}
-- Existing Marketing Channel Presence: {current_channels}
-- Competitor Marketing Tactics (if known): {competitor_tactics}
+- Industry Type: {industry_type}
+- Benchmarks: {benchmarks}
+- Top Channels: {top_channels}
+- Content Types: {content_types}
+
+External Input:
+- Previous Agent Output: {previous_agent_output}
 
 What to do:
 1. Identify the top 3–5 most effective marketing channels for SMBs in this industry — e.g., Instagram, WhatsApp, Google Business, in-store offers, referral programs, Snapchat, Twitter, LinkedIn, etc.
@@ -31,7 +44,8 @@ Output Format:
 
     chain = LLMChain(llm=groq_llm, prompt=prompt)
     return chain.run({
-        "industry": industry,
-        "current_channels": current_channels,
-        "competitor_tactics": competitor_tactics
+        "industry_type": industry_type,
+        "benchmarks": benchmarks,
+        "top_channels": top_channels,
+        "content_types": content_types,
     })

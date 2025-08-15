@@ -7,14 +7,27 @@ load_dotenv(override=True)
 
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
 
-def gtm_analysis_prompt(brand_presence: str, icp_jtbd: str = "", content_insights: str = "") -> str:
+def gtm_analysis_prompt(
+    user_structured_input : str,
+    previous_agent_output : str | None = None
+    ) -> str:
+
+    brand_presence = user_structured_input.get("brand_presence")
+    icp = user_structured_input.get("icp")
+    jtbd = user_structured_input.get("jtbd")
+    content_performance = user_structured_input.get("content_performance")
+
     prompt = PromptTemplate.from_template("""
 You are a GTM strategist for small and medium businesses. Based on the details provided, analyze and suggest a clear channel strategy plan.
 
 Inputs:
-- Brand’s Current Online and Offline Presence: {brand_presence}
-- ICP and JTBD Data (if available): {icp_jtbd}
-- Content and Performance Insights (if available): {content_insights}
+- Brand presence: {brand_presence}
+- ICP: {icp}
+- JTBD: {jtbd}
+- Content performance: {content_performance}
+
+External Input:
+- Previous agent output: {previous_agent_output}
 
 What you should do:
 1. Analyze current channels — including social media platforms, websites, listing directories, and offline presence (e.g., banners, word-of-mouth, in-store material).
@@ -32,6 +45,7 @@ Output Format:
     chain = LLMChain(llm=groq_llm, prompt=prompt)
     return chain.run({
         "brand_presence": brand_presence,
-        "icp_jtbd": icp_jtbd,
-        "content_insights": content_insights
+        "icp": icp,
+        "jtbd": jtbd,
+        "content_performance": content_performance,
     })

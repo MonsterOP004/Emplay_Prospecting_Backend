@@ -10,31 +10,27 @@ load_dotenv(override=True)
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.1-8b-instant")
 
 def customer_analysis_prompt(
-    product: str,
-    description: str,
-    sales_model: str,
-    product_analysis: str,
-    competitor_analysis: str,
-    customer_research: str
+    user_structured_input : str,
+    previous_agent_output : str | None = None
 ) -> str:
-    # 1. Perform Tavily Search for customer-related data
-    search_query = f"Customer demographics, psychographics, website, social links, CRM data for {product} {description} {sales_model}"
-    search_results = search_web(search_query)
 
-    # 2. Summarize long results to extract usable input
-    customer_insights = summarize_long_text(search_results, "demographics, psychographics, and web behavior for customer profiling")
+    website_url = user_structured_input.get("website_url", "")
+    social_profiles = user_structured_input.get("social_profiles", "")
+    persona_deck = user_structured_input.get("persona_deck", "")
+    customer_reviews = user_structured_input.get("customer_reviews", "")
 
-    # 3. Prompt
+    
     prompt = PromptTemplate.from_template("""
 You are a customer research expert. Your job is to finalize the Ideal Customer Profile (ICP) and build rich buyer personas based on the following inputs:
 
-- Product: {product}
-- Description: {description}
-- Sales Model: {sales_model}
-- Product Analysis: {product_analysis}
-- Competitor Analysis: {competitor_analysis}
-- Customer Research Summary: {customer_research}
-- Web & CRM Insights: {customer_analytics_landscape}
+Internal Inputs:
+- Website URL: {website_url}
+- Social Profiles: {social_profiles}
+- Persona Deck: {persona_deck}
+- Customer Reviews: {customer_reviews}
+
+External Inputs:
+- Previous agent output: {previous_agent_output}
 
 Tasks:
 1. Map out customer demographic details (age, gender, income), geographic traits (urban/rural, tier 1/2/3 cities), and psychographics (values, behavior, decision drivers).
@@ -60,11 +56,8 @@ Ensure the output:
     chain = LLMChain(llm=groq_llm, prompt=prompt)
 
     return chain.run({
-        "product": product,
-        "description": description,
-        "sales_model": sales_model,
-        "product_analysis": product_analysis,
-        "competitor_analysis": competitor_analysis,
-        "customer_research": customer_research,
-        "customer_analytics_landscape": customer_insights,
+        "website_url": website_url,
+        "social_profiles": social_profiles,
+        "persona_deck": persona_deck,
+        "customer_reviews": customer_reviews,
     })

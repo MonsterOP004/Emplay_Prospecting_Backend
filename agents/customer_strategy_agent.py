@@ -10,32 +10,24 @@ load_dotenv(override=True)
 groq_llm = ChatGroq(temperature=0.3, model="llama-3.3-70b-versatile")
 
 def customer_strategy_prompt(
-    product: str,
-    description: str,
-    sales_model: str,
-    product_analysis: str,
-    competitor_analysis: str,
-    customer_research: str,
-    customer_analysis: str,
+    user_structured_input : str,
+    previous_agent_output : str | None = None
 ) -> str:
-    # Step 1: Search the web for business stage, pain points, and marketing data
-    query = f"{product} business stage, pain points, marketing campaign examples, growth goals"
-    search_results = search_web(query)
-    summarized_data = summarize_long_text(search_results, task="business stage, pain points, and marketing history")
+    
+    business_goals = user_structured_input.get("business_goals")
+    business_stage = user_structured_input.get("business_stage")
+    marketing_problems = user_structured_input.get("marketing_problems") 
 
     # Step 2: Create a JTBD-focused prompt
     strategy_prompt = PromptTemplate.from_template("""
 You are a customer success strategist. Based on the product data, analysis, and external insights, identify the core jobs-to-be-done (JTBD) that the business is trying to solve.
 
 Inputs:
-- Product: {product}
-- Product Description: {description}
-- Sales Model: {sales_model}
-- Product Analysis: {product_analysis}
-- Competitor Analysis: {competitor_analysis}
-- Customer Research: {customer_research}
-- Customer Analysis: {customer_analysis}
-- External Market Context (includes business stage, pain points, and past marketing data): {customer_strategy_landscape}
+- Business Goals: {business_goals}
+- Business Stage: {business_stage}
+- Marketing Problems: {marketing_problems}
+
+- External Market Context: {previous_agent_output}
 
 Your task:
 1. Identify **functional JTBDs** (e.g., “Get more walk-ins,” “Book more appointments,” “Sell old stock”).
@@ -53,12 +45,7 @@ Avoid tables. Use structured paragraphs in natural tone.
 
     chain = LLMChain(llm=groq_llm, prompt=strategy_prompt)
     return chain.run({
-        "product": product,
-        "description": description,
-        "sales_model": sales_model,
-        "product_analysis": product_analysis,
-        "competitor_analysis": competitor_analysis,
-        "customer_research": customer_research,
-        "customer_analysis": customer_analysis,
-        "customer_strategy_landscape": summarized_data
+        "business_goals": business_goals,
+        "business_stage": business_stage,
+        "marketing_problems": marketing_problems,
     })
