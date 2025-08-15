@@ -1,7 +1,7 @@
 import requests
 import json
 
-BASE_URL = "https://14392c6f9bf0.ngrok-free.app"
+BASE_URL = "https://emplay-prospecting-backend.onrender.com"
 
 # Step 1: Send basic business info
 business_info = {

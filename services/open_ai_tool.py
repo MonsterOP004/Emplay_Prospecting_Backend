@@ -8,14 +8,14 @@ load_dotenv(override=True)
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-def call_openai_tool(form_data, perplexity_data):
+def call_openai_tool(business_info, perplexity_data):
 
-    business_name = form_data.get("business_name", "Unknown")
-    business_type = form_data.get("business_type", "Unknown")
-    location = form_data.get("location", "Unknown")
-    website_link = form_data.get("website_link", "Unknown")
-    business_goals = form_data.get("business_goals", "Unknown")
-    marketing_budget = form_data.get("marketing_budget", "Unknown")
+    business_name = business_info.get("business_name", "Unknown")
+    business_type = business_info.get("business_type", "Unknown")
+    location = business_info.get("location", "Unknown")
+    website_link = business_info.get("website_link", "Unknown")
+    business_goals = business_info.get("business_goals", "Unknown")
+    marketing_budget = business_info.get("marketing_budget", "Unknown")
 
     research_context = json.dumps(perplexity_data, indent=2)
 
@@ -145,14 +145,14 @@ For each selected strategy:
     • Action Items Dictionary: JSON schema with atomic tasks, assets needed, owner role, due dates, estimated cost, and expected impact.
 """
 
-def selected_strategy_expansion(form_data, perplexity_data, selection):
+def selected_strategy_expansion(business_info, perplexity_data, selection):
 
-    business_name = form_data.get("business_name", "Unknown")
-    business_type = form_data.get("business_type", "Unknown")
-    location = form_data.get("location", "Unknown")
-    website_link = form_data.get("website_link", "Unknown")
-    business_goals = form_data.get("business_goals", "Unknown")
-    marketing_budget = form_data.get("marketing_budget", "Unknown")
+    business_name = business_info.get("business_name", "Unknown")
+    business_type = business_info.get("business_type", "Unknown")
+    location = business_info.get("location", "Unknown")
+    website_link = business_info.get("website_link", "Unknown")
+    business_goals = business_info.get("business_goals", "Unknown")
+    marketing_budget = business_info.get("marketing_budget", "Unknown")
 
     research_context = json.dumps(perplexity_data, indent=2)
     user_selected_data = json.dumps(selection.get("selected_strategy_ids", []), indent=2)
