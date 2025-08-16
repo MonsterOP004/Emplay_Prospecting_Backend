@@ -121,9 +121,10 @@ Return output in **valid JSON** matching this schema exactly:
 }}
 
 Rules:
-- If data is not available, set the value to null or an empty list.
+- If data is not available or you are not able to find anything concrete then set the value to **null** in place of string acceptance or **an empty list** in place of list acceptance.
 - Keep responses concise but factual, with source links where possible.
 - Do not include extra text outside JSON.
+- Do not start with ``` json and end with ```. 
     """
 
 def call_perplexity_tool(prompt):

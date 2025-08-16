@@ -58,3 +58,17 @@ def get_plan(plan_id):
     row = cur.fetchone()
     conn.close()
     return row
+
+
+
+def delete_all_plans():
+    conn = sqlite3.connect(DB_PATH)
+    cur = conn.cursor()
+
+    # Delete all rows from table `plans`
+    cur.execute("DELETE FROM plans;")
+
+    conn.commit()
+    conn.close()
+
+    print("✅ All data deleted from `plans` table.")
