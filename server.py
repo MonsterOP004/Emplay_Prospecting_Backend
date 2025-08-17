@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel, Field, validator
 from typing import Optional
 from datetime import datetime
-from graph.graph_1 import prospect_graph
+# from graph.graph_1 import prospect_graph
 from tools.twilio_messenger import send_whatsapp
 import uvicorn
 from fastapi.middleware.cors import CORSMiddleware
@@ -34,25 +34,25 @@ async def root():
 async def health_check():
     return {"status": "ok"}
 
-@app.post("/prospecting_node")
-async def prospecting_node(input_data: ProspectingInput):
-    try:
-        graph_input = {
-            "agent_input": input_data.user_input,
-            "agent_output": "",
-            "current_agent": input_data.agent_name,
-            "status": "",
-            "prev_output": ""
-        }
-        result = prospect_graph.invoke(graph_input)
-        return {
-            "status": "success",
-            "current_agent": input_data.agent_name,
-            "agent_output": result.get("agent_output", ""),
-            "full_state": result
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+# @app.post("/prospecting_node")
+# async def prospecting_node(input_data: ProspectingInput):
+#     try:
+#         graph_input = {
+#             "agent_input": input_data.user_input,
+#             "agent_output": "",
+#             "current_agent": input_data.agent_name,
+#             "status": "",
+#             "prev_output": ""
+#         }
+#         result = prospect_graph.invoke(graph_input)
+#         return {
+#             "status": "success",
+#             "current_agent": input_data.agent_name,
+#             "agent_output": result.get("agent_output", ""),
+#             "full_state": result
+#         }
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
 
 @app.post("/twilio_messenger")
 async def twilio_messenger(
