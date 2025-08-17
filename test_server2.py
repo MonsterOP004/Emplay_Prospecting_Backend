@@ -1,7 +1,7 @@
 import requests
 import json
 
-BASE_URL = "https://bb5c4eba7f26.ngrok-free.app"
+BASE_URL = "http://localhost:6969/"
 
 # Step 1: Send basic business info
 business_info = {
