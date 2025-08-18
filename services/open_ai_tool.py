@@ -110,81 +110,88 @@ Table Columns:
 # Function 2: Expand Strategy (Point 4)
 # ---------------------------
 def selected_strategy_expansion(business_info, perplexity_data, current_plan, user_message):
-    business_name = business_info.get("business_name", "Unknown")
-    business_type = business_info.get("business_type", "Unknown")
-    location = business_info.get("location", "Unknown")
-    website_link = business_info.get("website_link", "Unknown")
-    business_goals = business_info.get("business_goals", "Unknown")
-    marketing_budget = business_info.get("marketing_budget", "Unknown")
-    current_marketing_assets = business_info.get("current_marketing_assets", "Unknown")
-    brand_voice = business_info.get("brand_voice", "Unknown")
 
+    marketing_budget = business_info.get("marketing_budget", "Unknown")
     research_context = json.dumps(perplexity_data, indent=2)
 
     system_message = f"""
 You are a **Marketing Strategy Refinement Assistant**.  
 
-The user will pick campaigns from the Recommendation Table.  
-Your task is to expand into **Execution Briefs (Point 4)** for the chosen campaign(s).  
+For each campaign the user selects from the Recommendation Table, generate a **single integrated campaign blueprint** that includes everything required for execution.  
 
 ---
 
-### Execution Briefs for Selected Campaigns
+### Campaign Blueprint (Integrated)
 
-**A) Campaign Blueprint**  
-- Campaign Name & Goal  
-- Audience + Segments (with triggers, motivations, intent signals)  
-- Message Pillars (3–5 core messages, with 1–2 sample lines each)  
-- Channel-Specific Playbooks:  
-  * Objectives & Funnel Role (awareness, nurture, conversion, retention)  
-  * Formats (Reels, Carousels, Ads, Landing Pages, Emails, SMS, Calls, etc.)  
-  * Cadence & Timeline → with exact posting/sending dates & frequency (e.g., “Day 1: Launch email, Day 3: Reel, Day 5: SMS reminder”)  
-  * Targeting Details (personas, geo, lookalikes, retargeting rules)  
-  * A/B Test Plan (hypothesis + what variable changes)  
-  * KPI Plan (metrics, checkpoints, measurement frequency)  
-  * Budget Allocation (per channel/asset)  
-  * Strategist Rationale → 3–5 bullets referencing seasonality, triggers, competitor gaps, asset leverage  
+**1. Campaign Name & Goal**  
+- Clearly state the campaign name and its primary objective.  
 
-**B) Content & Copy Starters (with CTAs)**  
-- Ad Copy (3–5 headlines, 2–3 body texts, CTAs)  
-- Social Posts: Reel script, captions, hashtags  
-- Emails: subject lines, preheader, body outline, CTA, send cadence  
-- SMS/WhatsApp: 3 variants, CTA, send timing notes  
-- Landing Page/Web: Hero H1/H2, bullets, CTA, trust signals  
-- Creative Direction: colors, imagery, motifs, aspect ratios  
-👉 For every asset: include CTA + 1–2 sentence rationale  
+**2. Audience + Triggers**  
+- Define the audience segments with their triggers, motivations, and intent signals.  
 
-**C) JSON Action Plan (Programmatic, per campaign)**  
-{{
-  "campaign_name": "Lead Nurture Email Sequence",
-  "objective": "Convert free trial users to paid customers",
-  "channels": [
-    {{
-      "name": "Email",
-      "sequence": [
-        {{"step": 1, "day": 0, "subject_line": "Welcome to [Product]", "body_copy": "Full email copy...", "cta": "Activate your account"}},
-        {{"step": 2, "day": 3, "subject_line": "See how [Product] saves time", "body_copy": "Full email copy...", "cta": "Book a demo"}}
-      ]
-    }}
-  ],
-  "kpis": ["Open Rate", "CTR", "Conversion Rate"],
-  "budget_estimate": "£2,000",
-  "roles_needed": ["Copywriter", "Designer"],
-  "success_criteria": "20% increase in conversions"
-}}  
+**3. Message Pillars (with example lines)**  
+- Provide 3–5 key messages with 1–2 sample lines each.  
+
+**4. Channel-Specific Execution (with embedded content)**  
+- For every activity, include the actual copy, creative notes, and scripts directly inside the section.  
+- Always generate the exact number of content pieces required by the campaign frequency.  
+  * Example: If 3 emails are required → provide **Email 1, Email 2, Email 3** with full subject, preview, body, CTA, and design tips.  
+  * If 2 Reels/week → provide **2 full scripts** (dialogue, scenes, VO, captions, hashtags).  
+  * If 3 ad variations → provide **Ad Variation A, B, C** with copy, CTA, and creative notes.  
+
+Channels to cover where relevant:  
+- **Email Campaigns (Drip/Nurture):** Subject, preview, full body, CTA, design notes.  
+- **SMS/WhatsApp:** Variants with copy, CTA, timing.  
+- **Social (Organic):** For Instagram, Facebook, TikTok, X, LinkedIn, Pinterest, Snapchat → post type, caption, hashtags, CTA, frequency.  
+- **Social Ads:** Platform + format (image, carousel, UGC, video, lead form). All variations of copy, CTA, creative notes.  
+- **TikTok/Reels/Video:** Full script with dialogue, scenes, VO, on-screen text, music/mood.  
+- **PPC/Paid Media:** Campaign type, bid strategy, targeting, ad copy, CTA, creatives (image, carousel, video).  
+- **Blog/SEO:** Topics, outlines, draft intros, H2s, CTAs (per frequency).  
+- **Popup Events / In-Store:** Rationale, setup, sample flyer copy, banners.  
+- **Influencers:** Type (nano/micro/macro), rationale, sample script/post.  
+- **Referral Program:** Incentive, messaging, share copy.  
+- **Partnerships / Cross-Promotions:** Partner type, joint offer, co-branded copy.  
+- **Print / Flyers / Handouts:** Headline, CTA, sample text, distribution.  
+- **Customer Loyalty:** Mechanism (punch card, perks), sample messaging.  
+- **PR / Local Media:** Press release draft, pitch email, sample headline.  
+- **UGC Campaigns:** Contest mechanics, prompts, participation copy.  
+
+**5. Expected Outcome**  
+- State what measurable business result this campaign will deliver, tied back to SMART objectives.  
+
+**6. A/B Test Plan**  
+- Provide hypotheses and variable changes (channel-specific, rooted in Perplexity benchmarks).  
+
+**7. KPI Plan**  
+- Define metrics, checkpoints, and measurement frequency (aligned with Perplexity research where possible).  
+
+**8. Budget Allocation**  
+- Show estimated spend per channel or asset.  
+- If data missing, mark as “estimated”.  
+
+**9. Strategist Rationale**  
+- Provide 3–5 concise bullets explaining why this campaign will work now, tied to:  
+  * Seasonality  
+  * Buying triggers  
+  * Competitor gaps  
+  * Asset leverage  
 
 ---
 
-### Guardrails
-- Keep total costs inside {marketing_budget}  
-- Respect brand voice & compliance  
-- Use placeholders like {{FirstName}}, {{City}}, {{OfferEndDate}}  
-- Consolidate overlapping ideas  
-- Missing data → mark as “estimated”  
+### Guardrails  
+- Keep total costs inside {marketing_budget} (or mark as “estimated”).  
+- Respect brand voice & compliance.  
+- Use placeholders {FirstName}, {City}, {OfferEndDate} where personalization applies.  
+- Replace costly tools with simple, practical tactics (e.g., loyalty punch cards instead of complex apps).  
+- Never restate raw Perplexity data; always interpret insights into **clear, actionable execution**.  
+- Do not create a separate “Content Starters” section — all content must be embedded in each channel’s execution.  
 
-User message: {user_message}  
-Current Plan (context): {current_plan}  
-Perplexity Research Summary: {research_context}  
+---
+
+**Context for generation:**  
+- User Message: {user_message}  
+- Current Plan: {current_plan}  
+- Perplexity Research Summary: {research_context}  
 """
 
     url = "https://api.openai.com/v1/chat/completions"

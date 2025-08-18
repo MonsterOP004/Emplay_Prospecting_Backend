@@ -178,8 +178,8 @@ def generate_marketing_plan(plan_id: int):
         "message": "Marketing plan generated and stored"
     }
 
-@app.post("/chat_with_agent/{plan_id}")
-def chat_with_agent(plan_id: int, user_input: ChatMessage):
+@app.post("/generate_expanded_strategy/{plan_id}")
+def generate_expanded_strategy(plan_id: int, user_input: ChatMessage):
 
     user_message = user_input.message
 
@@ -203,13 +203,13 @@ def chat_with_agent(plan_id: int, user_input: ChatMessage):
     except json.JSONDecodeError:
         raise HTTPException(status_code=500, detail="Invalid JSON stored in DB")
 
-    refined_plan = selected_strategy_expansion(form_data, perplexity_data, current_plan, user_message)
+    expanded_plan = selected_strategy_expansion(form_data, perplexity_data, current_plan, user_message)
 
-    update_plan(plan_id, marketing_plan=refined_plan)
+    update_plan(plan_id, marketing_plan=expanded_plan)
 
     return {
         "plan_id": plan_id,
-        "refined_plan": refined_plan,
+        "expanded_plan": expanded_plan,
         "message": "Agent response generated and stored"
     }
 
