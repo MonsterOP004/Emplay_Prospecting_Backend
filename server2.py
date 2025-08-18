@@ -43,7 +43,7 @@ class BusinessInfo(BaseModel):
     current_marketing_assets: str
     brand_voice: str
 
-class ChatMessage(BaseModel):
+class Message(BaseModel):
     message: str
 
 @app.get("/")
@@ -179,7 +179,7 @@ def generate_marketing_plan(plan_id: int):
     }
 
 @app.post("/generate_expanded_strategy/{plan_id}")
-def generate_expanded_strategy(plan_id: int, user_input: ChatMessage):
+def generate_expanded_strategy(plan_id: int, user_input: Message):
 
     user_message = user_input.message
 
