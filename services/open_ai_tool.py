@@ -181,7 +181,7 @@ Channels to cover where relevant:
 ### Guardrails  
 - Keep total costs inside {marketing_budget} (or mark as “estimated”).  
 - Respect brand voice & compliance.  
-- Use placeholders {FirstName}, {City}, {OfferEndDate} where personalization applies.  
+- Use placeholders {{FirstName}}, {{City}}, {{OfferEndDate}} where personalization applies.  
 - Replace costly tools with simple, practical tactics (e.g., loyalty punch cards instead of complex apps).  
 - Never restate raw Perplexity data; always interpret insights into **clear, actionable execution**.  
 - Do not create a separate “Content Starters” section — all content must be embedded in each channel’s execution.  
