@@ -1,7 +1,8 @@
 # server.py
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Dict
+from typing import Optional
 import json
 import sqlite3
 import uvicorn
@@ -10,6 +11,9 @@ from services.perplexity_tool import perplexity_tool_prompt, call_perplexity_too
 from services.open_ai_tool import call_openai_tool, selected_strategy_expansion
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from tools.twilio_messenger import send_whatsapp
+from graph.sms_pipeline import main as sms_main
+from graph.whatsapp_pipeline import main as whatsapp_main
 import re
 
 
@@ -212,6 +216,48 @@ def generate_expanded_strategy(plan_id: int, user_input: Message):
         "expanded_plan": expanded_plan,
         "message": "Agent response generated and stored"
     }
+
+@app.post("/twilio_messenger")
+async def twilio_messenger(
+    type: str = Form(...),
+    sender_number: str = Form(...),
+    sms_message: str = Form(...),
+    sending_period: str = Form(...),
+    time: Optional[str] = Form(None),
+    file: UploadFile = File(...)
+):
+    try:
+        if type.lower() == "whatsapp":
+            sending_period_clean = (sending_period or "").strip().lower()
+            if sending_period_clean not in ("instant", "scheduled"):
+                raise HTTPException(status_code=400, detail="Invalid sending_period. Must be 'instant' or 'scheduled'")
+            csv_bytes = await file.read()
+            result = whatsapp_main(
+                message_text=sms_message,
+                sender_number=sender_number,
+                csv_bytes=csv_bytes,
+                sending_period=sending_period_clean,
+                scheduled_time=time
+            )
+            return {"status": "Whatsapp message sent successfully", "sid": result}
+        elif type.lower() == "sms":
+            sending_period_clean = (sending_period or "").strip().lower()
+            if sending_period_clean not in ("instant", "scheduled"):
+                raise HTTPException(status_code=400, detail="Invalid sending_period. Must be 'instant' or 'scheduled'")
+            csv_bytes = await file.read()
+            result = sms_main(
+                message_text=sms_message,
+                sender_number=sender_number,
+                csv_bytes=csv_bytes,
+                sending_period=sending_period_clean,
+                scheduled_time=time
+            )
+            return {"status": "SMS processed", "details": result}
+        else:
+            raise HTTPException(status_code=400, detail="Invalid message type")
+    except Exception as e:
+        print(f"Twilio error: {e}")
+        raise HTTPException(status_code=500, detail=f"Twilio error: {e}")
 
 
 # @app.post("/get_selected_strategy/{plan_id}")
