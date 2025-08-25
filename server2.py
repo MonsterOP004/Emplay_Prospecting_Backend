@@ -14,6 +14,7 @@ from contextlib import asynccontextmanager
 from tools.twilio_messenger import send_whatsapp
 from graph.sms_pipeline import main as sms_main
 from graph.whatsapp_pipeline import main as whatsapp_main
+from tools.email_tool import send_bulk_email
 import re
 
 
@@ -49,6 +50,20 @@ class BusinessInfo(BaseModel):
 
 class Message(BaseModel):
     message: str
+
+class TwilioMessageInfo(BaseModel):
+    type: str                 
+    sender_number: str
+    sms_message: str
+    sending_period: str       
+    time: Optional[str] = None
+
+class EmailMessageInfo(BaseModel):
+    sender_email: str
+    subject: str
+    body: str
+    app_password: str
+
 
 @app.get("/")
 async def root():
@@ -219,82 +234,82 @@ def generate_expanded_strategy(plan_id: int, user_input: Message):
 
 @app.post("/twilio_messenger")
 async def twilio_messenger(
-    type: str = Form(...),
-    sender_number: str = Form(...),
-    sms_message: str = Form(...),
-    sending_period: str = Form(...),
-    time: Optional[str] = Form(None),
+    data: TwilioMessageInfo = Depends(),
     file: UploadFile = File(...)
 ):
     try:
-        if type.lower() == "whatsapp":
-            sending_period_clean = (sending_period or "").strip().lower()
-            if sending_period_clean not in ("instant", "scheduled"):
-                raise HTTPException(status_code=400, detail="Invalid sending_period. Must be 'instant' or 'scheduled'")
-            csv_bytes = await file.read()
+        sending_period_clean = (data.sending_period or "").strip().lower()
+        if sending_period_clean not in ("instant", "scheduled"):
+            raise HTTPException(status_code=400, detail="Invalid sending_period. Must be 'instant' or 'scheduled'")
+
+        csv_bytes = await file.read()
+
+        if data.type.lower() == "whatsapp":
             result = whatsapp_main(
-                message_text=sms_message,
-                sender_number=sender_number,
+                message_text=data.sms_message,
+                sender_number=data.sender_number,
                 csv_bytes=csv_bytes,
                 sending_period=sending_period_clean,
-                scheduled_time=time
+                scheduled_time=data.time
             )
             return {"status": "Whatsapp message sent successfully", "sid": result}
-        elif type.lower() == "sms":
-            sending_period_clean = (sending_period or "").strip().lower()
-            if sending_period_clean not in ("instant", "scheduled"):
-                raise HTTPException(status_code=400, detail="Invalid sending_period. Must be 'instant' or 'scheduled'")
-            csv_bytes = await file.read()
+
+        elif data.type.lower() == "sms":
             result = sms_main(
-                message_text=sms_message,
-                sender_number=sender_number,
+                message_text=data.sms_message,
+                sender_number=data.sender_number,
                 csv_bytes=csv_bytes,
                 sending_period=sending_period_clean,
-                scheduled_time=time
+                scheduled_time=data.time
             )
             return {"status": "SMS processed", "details": result}
+
         else:
             raise HTTPException(status_code=400, detail="Invalid message type")
+
     except Exception as e:
         print(f"Twilio error: {e}")
         raise HTTPException(status_code=500, detail=f"Twilio error: {e}")
 
 
-# @app.post("/get_selected_strategy/{plan_id}")
-# def select_strategies(plan_id: int, selection: dict):
-#     conn = sqlite3.connect(DB_PATH)
-#     cur = conn.cursor()
-#     selection_data = {
-#         "selected_strategy_ids": selection.get("selected_strategy_ids", []),
-#         "month_activity_selections": selection.get("month_activity_selections", {})
-#     }
-#     cur.execute(
-#         "UPDATE plans SET strategy_selection = ? WHERE id = ?",
-#         (json.dumps(selection_data), plan_id)
-#     )
-#     conn.commit()
-#     conn.close()
-#     return {"plan_id": plan_id, "message": "Strategy selection stored"}
+@app.post("/send_email")
+async def send_email(
+    data: EmailMessageInfo = Depends(),
+    file: UploadFile = File(...)
+):
+    try:
 
-# @app.post("/generate_final_plan/{plan_id}")
-# def generate_final_plan(plan_id: int):
-#     conn = sqlite3.connect(DB_PATH)
-#     cur = conn.cursor()
-#     cur.execute("SELECT strategy_selection, business_info, perplexity_data FROM plans WHERE id = ?", (plan_id,))
-#     row = cur.fetchone()
-#     conn.close()
+        csv_content = await file.read()
+        decoded_csv = csv_content.decode('utf-8')
+        reader = csv.reader(StringIO(decoded_csv))
 
-#     if not row or not row[0]:
-#         raise HTTPException(status_code=404, detail="Strategy selection not found")
+        recipients = [row[0].strip() for row in reader if row and row[0].strip()]
 
-#     selection_str, business_info_str, perplexity_data_str = row
-#     selection = json.loads(selection_str)
-#     business_info = json.loads(business_info_str)
-#     perplexity_data = json.loads(perplexity_data_str)
+        if not recipients:
+            raise HTTPException(status_code=400, detail="No valid recipient emails found in CSV.")
 
-#     final_plan = selected_strategy_expansion(business_info, perplexity_data, selection)
-#     update_plan(plan_id, final_plan=final_plan)
-#     return {"plan_id": plan_id, "final_plan": final_plan, "message": "Final plan generated"}
+
+        result = send_bulk_email(
+            sender_email=data.sender_email,
+            app_password=data.app_password,
+            recipients=recipients,
+            subject=data.subject,
+            html_message=data.body
+        )
+
+        if result.get("status") == "failed":
+            raise HTTPException(status_code=500, detail=result["error"])
+
+        return {
+            "status": "Emails sent successfully",
+            "total_recipients": len(recipients),
+            "recipients": recipients
+        }
+
+    except Exception as e:
+        print(f"Email sending error: {e}")
+        raise HTTPException(status_code=500, detail=f"Email sending failed: {e}")
+
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=6969)
