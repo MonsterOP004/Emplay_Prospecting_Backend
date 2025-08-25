@@ -1,5 +1,5 @@
 # server.py
-from fastapi import FastAPI, HTTPException, UploadFile, File, Form
+from fastapi import Depends,FastAPI, HTTPException, UploadFile, File, Form
 from pydantic import BaseModel
 from typing import Dict
 from typing import Optional
